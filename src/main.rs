@@ -6,6 +6,22 @@ use serialport::{DataBits, FlowControl, Parity, StopBits};
 mod serial_com;
 
 fn main() {
+    // 简单的串口扫描
+    match serialport::available_ports() {
+        Ok(ports) => {
+            for p in ports {
+                if let serialport::SerialPortType::UsbPort(..) = p.port_type {
+                    println!("{}", p.port_name);
+                }
+            }
+        }
+        Err(e) => {
+            dbg!(e);
+        }
+    }
+
+
+
     let connected_serial  = serial_com::SerialStatus::new(
         serial_com::SerialCom{
             port: Arc::from(String::from("COM2")),
@@ -35,8 +51,6 @@ fn main() {
             println!("Failed to connect!");
         }
     }
-
-
 }
 
 
