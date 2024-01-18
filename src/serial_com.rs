@@ -1,6 +1,7 @@
+use std::io::Read;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
+use serialport::{DataBits, Error, FlowControl, Parity, SerialPort, StopBits};
 
 /**
  * SerialCom struct.
@@ -61,9 +62,13 @@ impl SerialStatus {
     }
 
     // 发送方法
-    pub fn send(&self, data: &[u8]) -> Result<String, serialport::Error> {
+    pub fn send_receive(&self, data: &[u8]) -> Result<String, serialport::Error> {
+        let mut port = self.port.as_ref().ok_or(serialport::Error::new(serialport::ErrorKind::NoDevice, "No port available"))?.try_clone()?;
+        let mut response: Vec<u8> = Vec::new();
+        port.write(data)?;
+        port.read(&mut response)?;
 
-        Ok(String::from("avv"))
+        Ok(String::from_utf8_lossy(&response).to_string())
     }
 
     // 断开方法
