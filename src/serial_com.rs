@@ -62,6 +62,7 @@ impl SerialStatus {
     }
 
     /// 以十六进制格式向 modbus 设备发送数据并回读响应。
+    /// ## 适用 欧姆龙 岛电 宇电 PID温控表 以及 MFC气体流量计
     /// # Arguments
     /// * `data` - 要以十六进制格式发送到 modbus 设备的数据。
     /// # Returns
@@ -76,6 +77,37 @@ impl SerialStatus {
         port.write(data)?;
         port.read(&mut buffer)?;
         Ok(buffer)
+    }
+
+    /// 将字符串发送到连接的设备，并以字符串形式返回响应。
+    /// ## 适用 KEITHLEY 同惠 安捷伦 等nV nA源表
+    /// # Arguments
+    ///
+    /// * `data` - 要发送到设备的字符串。
+    ///
+    /// # Returns
+    ///
+    /// `Result<String, Error>` ，包含包含来自设备的响应或错误的字节片。
+    pub fn send_receive_string(&self, data: &String) -> Result<String, Error> {
+        let mut port = self.port.as_ref().ok_or(Error::new(
+            serialport::ErrorKind::NoDevice,
+            "No port available",
+        ))?
+            .try_clone()?;
+        let mut serial_buf: Vec<u8> = vec![0; 128];
+        let data_with_newline = format!("{}\r\n", data); // 在字符串末尾添加换行符
+        port.write(data_with_newline.as_bytes())?;
+        let bytes_read = port.read(serial_buf.as_mut_slice())?;
+        serial_buf.truncate(bytes_read);
+        serial_buf.pop(); //    remove  \r
+        serial_buf.pop(); //    remove  \n
+        match String::from_utf8_lossy(&serial_buf).parse() {
+            Ok(result) => Ok(result),
+            Err(_) => Err(Error::new(
+                serialport::ErrorKind::InvalidInput,
+                "Failed to parse received data",
+            )),
+        }
     }
 
     /// 断开方法
