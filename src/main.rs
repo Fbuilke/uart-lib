@@ -5,51 +5,47 @@ use serialport::{DataBits, FlowControl, Parity, StopBits};
 mod serial_com;
 
 fn main() {
-    // 简单的串口扫描
-    match serialport::available_ports() {
+    match serial_com::get_serial_port_available_list() {
         Ok(ports) => {
-            dbg!(&ports);
-            for p in ports {
-                if let serialport::SerialPortType::UsbPort(..) = p.port_type {
-                    println!("{}", p.port_name);
-                }
+            for port in ports {
+                println!("{:?}", port);
             }
         }
         Err(e) => {
-            dbg!(e);
+            println!("{:?}", e);
         }
     }
 
 
 
-    let connected_serial  = serial_com::SerialStatus::new(
-        serial_com::SerialCom{
-            port: Arc::from(String::from("COM8")),
-            baud: 115_200,
-            data_bits: DataBits::Eight,
-            stop_bits: StopBits::One,
-            parity: Parity::None,
-            flow_control: FlowControl::None,
-            timeout: Duration::from_millis(100),
-        }
-    ).connect();
-
-    match connected_serial {
-        Ok(_) => {
-            println!("Connected!");
-            match connected_serial.unwrap().send_receive_string(&String::from("*IDN?")) {
-                Ok(buffer) => {
-                    println!("data receive\n{}", buffer);
-                }
-                Err(err) => {
-                    dbg!(err);
-                }
-            }
-        }
-        Err(err) => {
-            dbg!(err);
-        }
-    }
+    // let connected_serial  = serial_com::SerialStatus::new(
+    //     serial_com::SerialCom{
+    //         port: Arc::from(String::from("COM9")),
+    //         baud: 9_600,
+    //         data_bits: DataBits::Eight,
+    //         stop_bits: StopBits::One,
+    //         parity: Parity::None,
+    //         flow_control: FlowControl::None,
+    //         timeout: Duration::from_millis(100),
+    //     }
+    // ).connect();
+    //
+    // match connected_serial {
+    //     Ok(_) => {
+    //         println!("Connected!");
+    //         match connected_serial.unwrap().send_receive_string(&String::from("*IDN?")) {
+    //             Ok(buffer) => {
+    //                 println!("data receive\n{}", buffer);
+    //             }
+    //             Err(err) => {
+    //                 dbg!(err);
+    //             }
+    //         }
+    //     }
+    //     Err(err) => {
+    //         dbg!(err);
+    //     }
+    // }
 
     // match connected_serial {
     //     Ok(_) => {

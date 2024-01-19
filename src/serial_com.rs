@@ -119,3 +119,24 @@ impl SerialStatus {
         }
     }
 }
+
+/// 返回可用串行端口的列表。
+/// 如果没有可用的串行端口，此函数将返回错误。
+pub fn get_serial_port_available_list() -> Result<Vec<String>, Error> {
+    let mut serial_buf:Vec<String> = Vec::new();
+    match serialport::available_ports() {
+        Ok(_) => {
+            for port in serialport::available_ports()? {
+                serial_buf.push(port.port_name);
+            }
+            Ok(serial_buf)
+        }
+        Err(_) => {
+            Err(Error::new(
+                serialport::ErrorKind::NoDevice,
+                "No port available",
+            ))
+        }
+    }
+}
+
