@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::thread;
 use std::time::Duration;
 use serialport::{DataBits, FlowControl, Parity, StopBits};
 
