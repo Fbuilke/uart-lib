@@ -3,9 +3,7 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use serialport::{DataBits, Error, FlowControl, Parity, SerialPort, StopBits};
 
-/**
- * SerialCom struct.
- */
+/// SerialCom struct.
 #[derive(Clone, Debug)]
 pub struct SerialCom {
     pub port: Arc<String>, // 串口号
@@ -17,17 +15,15 @@ pub struct SerialCom {
     pub timeout: Duration, // 超时时间
 }
 
-/**
- * 串口状态结构体
- */
+/// 串口状态结构体
 pub struct SerialStatus {
-    pub port: Option<Box<dyn SerialPort>>, //串口打开对象附带错误处理
+    pub port: Option<Box<dyn SerialPort>>, // 串口打开对象附带错误处理
     pub connected: Arc<RwLock<bool>>, // 连接状态使用原子技术附加读写锁
     pub info: SerialCom, // 串口信息
 }
 
 impl SerialStatus {
-    // 构建函数
+    /// 构建函数
     pub fn new(config: SerialCom) -> Self {
         SerialStatus {
             port: None,
@@ -36,8 +32,12 @@ impl SerialStatus {
         }
     }
 
-    // 连接方法
-    pub fn connect(mut self) -> Result<Self, serialport::Error> {
+    /// 连接到串行端口。
+    /// # Arguments
+    /// * `self` - 对 `SerialStatus` 结构的引用。
+    /// # Returns
+    /// 包含 `SerialStatus` 结构的 `Result` ，其中包含连接的串行端口或错误。
+    pub fn connect(mut self) -> Result<Self, Error> {
         let port = serialport::new(self.info.port.as_str(), self.info.baud)
             .data_bits(self.info.data_bits)
             .stop_bits(self.info.stop_bits)
@@ -52,7 +52,7 @@ impl SerialStatus {
         Ok(self)
     }
 
-    // 是否连接
+    /// 是否连接
     pub fn is_connected(&self) -> bool {
         if let Ok(connected) = self.connected.read() {
             *connected
@@ -61,17 +61,24 @@ impl SerialStatus {
         }
     }
 
-    // 发送方法
-    pub fn send_receive(&self, data: &[u8]) -> Result<String, serialport::Error> {
-        let mut port = self.port.as_ref().ok_or(serialport::Error::new(serialport::ErrorKind::NoDevice, "No port available"))?.try_clone()?;
-        let mut response: Vec<u8> = Vec::new();
+    /// 以十六进制格式向 modbus 设备发送数据并回读响应。
+    /// # Arguments
+    /// * `data` - 要以十六进制格式发送到 modbus 设备的数据。
+    /// # Returns
+    /// 一个 `Result<[u8; 32], Error>` ，包含包含来自 modbus 设备的响应或错误的字节片。
+    pub fn send_receive_hex(&self, data: &[u8]) -> Result<[u8; 32], Error> {
+        let mut port = self.port.as_ref().ok_or(Error::new(
+            serialport::ErrorKind::NoDevice,
+            "No port available",
+        ))?
+        .try_clone()?;
+        let mut buffer: [u8; 32] = [0; 32];
         port.write(data)?;
-        port.read(&mut response)?;
-
-        Ok(String::from_utf8_lossy(&response).to_string())
+        port.read(&mut buffer)?;
+        Ok(buffer)
     }
 
-    // 断开方法
+    /// 断开方法
     pub fn disconnect(self) {
         if let Ok(mut connected) = self.connected.write() {
             if *connected {
